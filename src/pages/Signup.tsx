@@ -11,24 +11,51 @@ const Signup = () => {
   const [error, setError] = useState<string>("");
 
   useEffect(() => {
-    console.log("Setting up auth state change listener");
+    console.log("Setting up auth state change listener in Signup");
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("Auth state changed:", event);
+      console.log("Auth state changed in Signup:", event, session);
+      
       if (event === "SIGNED_IN") {
-        console.log("User signed in, navigating to home");
+        console.log("User signed in successfully, navigating to home");
         navigate("/");
       }
+      
       if (event === "SIGNED_OUT") {
         setError(""); // Clear error on sign out
       }
+
+      // Handle specific auth errors
       if (event === "USER_UPDATED" && !session) {
-        console.log("Auth error occurred");
-        setError("Invalid signup credentials. Please check your information and try again.");
+        console.log("Auth error occurred in signup");
+        const { error } = supabase.auth.getSession();
+        if (error instanceof AuthApiError) {
+          switch (error.status) {
+            case 400:
+              setError("Please check your credentials and try again.");
+              break;
+            case 422:
+              setError("Invalid email format. Please check and try again.");
+              break;
+            default:
+              setError(error.message);
+          }
+        }
       }
     });
 
+    // Check if user is already signed in
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        console.log("User already signed in, redirecting to home");
+        navigate("/");
+      }
+    };
+    
+    checkUser();
+
     return () => {
-      console.log("Cleaning up auth state change listener");
+      console.log("Cleaning up auth state change listener in Signup");
       subscription.unsubscribe();
     }
   }, [navigate]);
@@ -52,6 +79,7 @@ const Signup = () => {
             appearance={{ theme: ThemeSupa }}
             theme="light"
             providers={[]}
+            view="sign_up"
           />
         </div>
       </div>
