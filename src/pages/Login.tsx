@@ -21,15 +21,6 @@ const Login = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  const handleError = (error: AuthError) => {
-    console.error("Auth error:", error);
-    if (error.message.includes("Invalid login credentials")) {
-      setError("Invalid email or password. Please check your credentials and try again.");
-    } else {
-      setError(error.message);
-    }
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
@@ -56,7 +47,6 @@ const Login = () => {
             theme="light"
             providers={[]}
             view="sign_in"
-            onError={handleError}
           />
         </div>
       </div>
