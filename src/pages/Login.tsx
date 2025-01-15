@@ -1,21 +1,34 @@
 import { Auth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { AuthError } from "@supabase/supabase-js";
 
 const Login = () => {
   const navigate = useNavigate();
+  const [error, setError] = useState<string>("");
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN") {
         navigate("/");
       }
+      // Clear error when auth state changes
+      setError("");
     });
 
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  const handleError = (error: AuthError) => {
+    console.error("Auth error:", error);
+    if (error.message.includes("Invalid login credentials")) {
+      setError("Invalid email or password. Please check your credentials and try again.");
+    } else {
+      setError(error.message);
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -25,6 +38,17 @@ const Login = () => {
             Sign in to your account
           </h2>
         </div>
+        {error && (
+          <div className="bg-red-50 border-l-4 border-red-400 p-4">
+            <div className="flex">
+              <div className="ml-3">
+                <p className="text-sm text-red-700">
+                  {error}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
         <div className="mt-8">
           <Auth
             supabaseClient={supabase}
@@ -32,6 +56,7 @@ const Login = () => {
             theme="light"
             providers={[]}
             view="sign_in"
+            onError={handleError}
           />
         </div>
       </div>
