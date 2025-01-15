@@ -12,7 +12,7 @@ const Signup = () => {
 
   useEffect(() => {
     console.log("Setting up auth state change listener in Signup");
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Auth state changed in Signup:", event, session);
       
       if (event === "SIGNED_IN") {
@@ -27,9 +27,9 @@ const Signup = () => {
       // Handle specific auth errors
       if (event === "USER_UPDATED" && !session) {
         console.log("Auth error occurred in signup");
-        const { error } = supabase.auth.getSession();
-        if (error instanceof AuthApiError) {
-          switch (error.status) {
+        const { data, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError instanceof AuthApiError) {
+          switch (sessionError.status) {
             case 400:
               setError("Please check your credentials and try again.");
               break;
@@ -37,7 +37,7 @@ const Signup = () => {
               setError("Invalid email format. Please check and try again.");
               break;
             default:
-              setError(error.message);
+              setError(sessionError.message);
           }
         }
       }
