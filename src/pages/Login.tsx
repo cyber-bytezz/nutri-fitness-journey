@@ -3,22 +3,34 @@ import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AuthError } from "@supabase/supabase-js";
+import { AuthError, AuthApiError } from "@supabase/supabase-js";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const Login = () => {
   const navigate = useNavigate();
   const [error, setError] = useState<string>("");
 
   useEffect(() => {
+    console.log("Setting up auth state change listener");
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Auth state changed:", event);
       if (event === "SIGNED_IN") {
+        console.log("User signed in, navigating to home");
         navigate("/");
       }
-      // Clear error when auth state changes
-      setError("");
+      if (event === "SIGNED_OUT") {
+        setError(""); // Clear error on sign out
+      }
+      if (event === "USER_UPDATED" && !session) {
+        console.log("Auth error occurred");
+        setError("Invalid login credentials. Please try again.");
+      }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      console.log("Cleaning up auth state change listener");
+      subscription.unsubscribe();
+    }
   }, [navigate]);
 
   return (
@@ -30,15 +42,9 @@ const Login = () => {
           </h2>
         </div>
         {error && (
-          <div className="bg-red-50 border-l-4 border-red-400 p-4">
-            <div className="flex">
-              <div className="ml-3">
-                <p className="text-sm text-red-700">
-                  {error}
-                </p>
-              </div>
-            </div>
-          </div>
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         )}
         <div className="mt-8">
           <Auth
